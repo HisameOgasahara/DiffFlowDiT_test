@@ -1,0 +1,20 @@
+{
+  "prompt": "@ogipote, 1girl, plana (blue archive), upper body, \n, solo, cute, cheerful, innocent, expressionless, looking_at_viewer, alternte costume, white school uniform, blue_ribbon, white_socks, school_theme, sitting, holding_tablet, sunlight, soft_lighting, gentle_breeze, floating_particles, futuristic_city, academy_city, glass_building, blue_and_white_theme, pastel_colors, vibrant_colors, depth_of_field, wallpaper",
+  "negative_prompt": "worst quality, low quality, score_1, score_2, score_3, blurry, jpeg artifacts",
+  "seed": 1113280783077040,
+  "steps": 30,
+  "cfg": 4.0,
+  "sampler_name": "er_sde",
+  "scheduler": "simple",
+  "denoise": 1.0,
+  "width": 1216,
+  "height": 832,
+  "batch_size": 1,
+  "models": {
+    "dit": "anima-base-v1.0.safetensors",
+    "text_encoder": "qwen_3_06b_base.safetensors",
+    "vae": "qwen_image_vae.safetensors"
+  },
+  "clip_type": "stable_diffusion",
+  "lora_applied": false
+}

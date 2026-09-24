@@ -1,0 +1,34 @@
+{
+  "repository": "circlestone-labs/Anima",
+  "revision": "f973fc41ec7545364ac9776c2440285f43ff2a30",
+  "weights": {
+    "dit": {
+      "filename": "anima-base-v1.0.safetensors",
+      "sha256": "bd43b7cffe1ed1153d9c41e7beb2f18cb1273eafbaa3af3edd6a173dc90a006e",
+      "bytes": 4182218328
+    },
+    "text_encoder": {
+      "filename": "qwen_3_06b_base.safetensors",
+      "sha256": "cd2a512003e2f9f3cd3c32a9c3573f820bb28c940f73c57b1ddaa983d9223eba",
+      "bytes": 1192135096
+    },
+    "vae": {
+      "filename": "qwen_image_vae.safetensors",
+      "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
+      "bytes": 253806246
+    }
+  },
+  "original_png_weight_hashes_known": false,
+  "tokenizers": {
+    "qwen25_tokenizer": {
+      "merges.txt": "b8e04af9c950e393054010dcef499c3f005e803e9b2da1a09b96a26c33266eb1",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "tokenizer_config.json": "021c81f54eabfd88c7f26f2d9fa601cd7e1c0f236a547e7480aaffa72dee747a"
+    },
+    "t5_tokenizer": {
+      "special_tokens_map.json": "65d84a9271d68f1230ab99518c00f0f7eaef95c7b363001595ba6fa662d434b1",
+      "tokenizer_config.json": "391561cbd46ecf582321c6ef32f832647ae89bdd2ae7c7d536b9d22754834da2",
+      "tokenizer.json": "d83c89be63f15850fe89464127d24e8c4b6ac688ccd58d6d2621cde703fa5d8f"
+    }
+  }
+}

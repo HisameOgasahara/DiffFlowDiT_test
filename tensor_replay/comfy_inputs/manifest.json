@@ -1,0 +1,41 @@
+{
+  "context_order": [
+    "negative",
+    "positive"
+  ],
+  "environment": {
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "gpu": "Tesla T4"
+  },
+  "files": {
+    "context.pt": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_er_sde_20260924_131715\\dit_input_context.pt",
+      "sha256": "1b5ce8263ed0e10f16a29c9442c2949f40e4df3a53470fa394ae7029044b02aa"
+    },
+    "initial_noise.pt": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_matched_euler_20260924_131453\\initial_noise.pt",
+      "sha256": "f655a3cff52197981b68e23bfc21ae9f9555699c0370b89d371bfa1238d46941"
+    },
+    "sigmas.pt": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_matched_euler_20260924_131453\\sigmas.pt",
+      "sha256": "73d808799192189486df8c0804d22c6dc991c8f103f4ac569be1ff4b5ebcbd42"
+    },
+    "generation.json": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_matched_euler_20260924_131453\\generation.json",
+      "sha256": "39491bf48a84187b6fd439bfee0ca21a0c4575f7028a6eec19da7d6dceeffc9b"
+    },
+    "models.json": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_matched_euler_20260924_131453\\models.json",
+      "sha256": "12ec1a385e8966d139e58bad7ee172cdcd2837501139e5da6e511b03234cb5e3"
+    },
+    "reference.png": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_matched_euler_20260924_131453\\image.png",
+      "sha256": "e6d03c609beb959e749275b03b7b19b7b03d9c18eece42e00973f2515ea7600b"
+    },
+    "reference_latent.pt": {
+      "source": "D:\\portfolio\\t\\Anima_results-20260924T132131Z-1-001\\Anima_results\\20260924_132112\\comfyui_matched_euler_20260924_131453\\final_model_latent.pt",
+      "sha256": "4941f2fe34c52af4ae4d7e80e5c644c80107e8527401e23c32dd4ef0a953f8e3"
+    }
+  }
+}
