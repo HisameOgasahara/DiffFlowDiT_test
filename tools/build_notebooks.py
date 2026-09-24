@@ -47,7 +47,19 @@ def build(backend, number, title):
     """), cell("code", f"""
     # 2. 환경 설치
     BACKEND = {backend!r}
-    subprocess.run([sys.executable, str(PROJECT / 'tools/setup_environment.py'), BACKEND], check=True)
+    INSTALL_LOG = DATA / f'install_{{BACKEND}}.log'
+    with INSTALL_LOG.open('w', encoding='utf-8') as log:
+        process = subprocess.Popen(
+            [sys.executable, '-u', str(PROJECT / 'tools/setup_environment.py'), BACKEND],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        )
+        for line in process.stdout:
+            print(line, end='', flush=True)
+            log.write(line)
+        returncode = process.wait()
+    if returncode:
+        details = INSTALL_LOG.read_text(encoding='utf-8')[-12000:]
+        raise RuntimeError(f'환경 설치 실패({{returncode}}): {{INSTALL_LOG}}\\n{{details}}')
     PYTHON = PROJECT / f'.venv-{{BACKEND}}/bin/python'
     subprocess.run([str(PYTHON), '-c', 'import torch; print(torch.__version__); print(torch.cuda.get_device_name()); assert torch.cuda.is_available()'], check=True)
     """), cell("markdown", """
