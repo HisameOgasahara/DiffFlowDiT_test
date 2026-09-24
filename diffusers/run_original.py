@@ -20,7 +20,8 @@ def run(args, record):
     hp, options = args.hp, args.options
     dtype = getattr(torch, options["dtype"])
     args.precision = {name: dtype for name in ("transformer", "text_conditioner", "text_encoder", "vae")}
-    record.data.update(mode="original", precision_policy=options["dtype"], computation_replacements=False,
+    record.data.update(mode="original", precision_policy=options["dtype"], computation_replacements=options.get("residual_fp32", True),
+                       residual_fp32=options.get("residual_fp32", True), nan_debug=options.get("nan_debug", False),
                        effective_sampler="FlowMatchEulerDiscreteScheduler",
                        effective_schedule="original Anima FlowMatch grid", offload=options["hf_offload"],
                        trace_notes={"latent_axes": "B,C,T,H,W",
@@ -48,6 +49,17 @@ def run(args, record):
             scheduler=FlowMatchEulerDiscreteScheduler(shift=options["shift"]),
             guider=ClassifierFreeGuidance(guidance_scale=hp["cfg"]),
         )
+        if options.get("residual_fp32", True):
+            from fp16_debug.residual_fp32 import install_residual_fp32
+            record.handles.extend(install_residual_fp32(pipe.transformer))
+        if options.get("nan_debug", False):
+            from fp16_debug.nan_debug import NanDebugger
+            debugger = NanDebugger(args.output)
+            for name in ("text_encoder", "text_conditioner", "transformer", "vae"):
+                # attach마다 새로 추가한 handle만 Recorder에서 정리한다.
+                previous = len(debugger.handles)
+                debugger.attach(name, getattr(pipe, name))
+                record.handles.extend(debugger.handles[previous:])
         if options["hf_offload"] == "none":
             pipe.to("cuda")
         if options["vae_tiling"]:

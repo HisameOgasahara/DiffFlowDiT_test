@@ -5,7 +5,13 @@
   "hf_offload": "auto",
   "vae_tiling": false,
   "tokenizers": {
-    "qwen": {"local_path": "comfyui/upstream/comfy/text_encoders/qwen25_tokenizer"},
-    "t5": {"local_path": "comfyui/upstream/comfy/text_encoders/t5_tokenizer"}
-  }
+    "qwen": {
+      "local_path": "comfyui/upstream/comfy/text_encoders/qwen25_tokenizer"
+    },
+    "t5": {
+      "local_path": "comfyui/upstream/comfy/text_encoders/t5_tokenizer"
+    }
+  },
+  "residual_fp32": true,
+  "nan_debug": true
 }
