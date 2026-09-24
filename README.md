@@ -25,6 +25,7 @@ Anima의 ComfyUI 생성 이미지·생성 설정·T4 실행 환경을 baseline�
 | DiT | anima-base-v1.0.safetensors |
 | Text encoder | qwen_3_06b_base.safetensors |
 | VAE | qwen_image_vae.safetensors |
+| 모델 저장소 revision | [circlestone-labs/Anima · f973fc4](https://huggingface.co/circlestone-labs/Anima/tree/f973fc41ec7545364ac9776c2440285f43ff2a30/split_files) |
 | 크기 | 1216 × 832, batch 1 |
 | Seed | 1113280783077040 |
 | Steps / CFG | 30 / 4 |
@@ -36,19 +37,24 @@ Anima의 ComfyUI 생성 이미지·생성 설정·T4 실행 환경을 baseline�
 
 ## Baseline 실행 환경
 
-| 항목 | 확인된 값 |
+| 항목 | 값 |
 |---|---|
 | Baseline 생성 노트북 | [anima_comfyui_colab.ipynb](https://github.com/HisameOgasahara/irodori_test/blob/5a2458c5efb6f32ac6ecac3701cead6b57f8374c/anima_comfyui_colab.ipynb) |
 | ComfyUI / frontend | 0.37.0 / 1.53.6 |
+| ComfyUI 커밋 범위 (파일 저장 시점 기준) | [b5cc883…1568e6c](https://github.com/Comfy-Org/ComfyUI/compare/b5cc8830279eae909a59de030af1e50761c36751...1568e6cfd04586a4b3c4e1817ea7dde09b1bf9e7) |
+| 비교 코드의 ComfyUI 커밋 | [f427c3a](https://github.com/Comfy-Org/ComfyUI/commit/f427c3a285502cc452bbf134b810668844b79ffa) |
 | Templates | 0.11.69 |
 | OS / Python | Linux / 3.13.15 (GCC 13.3.0) |
 | PyTorch / CUDA 빌드 | 2.14.0+cu130 |
 | GPU / VRAM | Tesla T4 / 14.56 GB |
 | allocator | cudaMallocAsync |
+| DiT / VAE 기본 dtype (T4 코드 경로) | FP16 / FP16 |
+| 텍스트 인코더 dtype (T4 코드 경로) | 가중치 FP16 / Qwen 계산 FP32 |
+| 기본 attention 구현 (코드 경로) | PyTorch SDPA (`scaled_dot_product_attention`) |
 | 실행 인자 | `main.py --listen 127.0.0.1 --port 8188 --enable-manager` |
 | 설치 방식 | Colab Python으로 `uv venv --seed --system-site-packages`, ComfyUI requirements 및 manager_requirements 설치 |
 
-Baseline 생성 세션의 시스템 정보에 기록된 값입니다. 해당 세션의 정확한 Git SHA·가중치 해시·연산 dtype·attention 커널은 미확인입니다. 세 비교 노트북은 위 Python/PyTorch를 확인하고 Colab 환경을 상속하며, torch·torchvision 버전을 유지합니다.
+세 비교 노트북은 위 Python/PyTorch를 확인하고 Colab 환경을 상속하며, torch·torchvision 버전을 유지합니다.
 
 ## 비교 모드
 
