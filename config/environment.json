@@ -7,6 +7,7 @@
     "python": "3.13.15",
     "torch": "2.14.0+cu130",
     "torchvision": "0.29.0+cu130",
+    "torchaudio": "2.11.0+cu130",
     "torch_backend": "cu130",
     "gpu": "Tesla T4",
     "comfyui": "0.37.0",

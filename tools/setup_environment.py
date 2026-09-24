@@ -60,18 +60,19 @@ def setup(backend, cpu=False):
     else:
         subprocess.run([uv, "pip", "install", "--python", str(python),
                         f"torch=={baseline['torch']}", f"torchvision=={baseline['torchvision']}",
+                        f"torchaudio=={baseline['torchaudio']}",
                         "--torch-backend", baseline["torch_backend"]], check=True)
     constraints = ["-c", str(ROOT / "config/constraints.txt")]
     if not cpu:
         baseline_constraints = environment / "baseline_constraints.txt"
-        baseline_constraints.write_text("".join(f"{name}=={baseline[name]}\n" for name in ("torch", "torchvision")), encoding="utf-8")
+        baseline_constraints.write_text("".join(f"{name}=={baseline[name]}\n" for name in ("torch", "torchvision", "torchaudio")), encoding="utf-8")
         constraints += ["-c", str(baseline_constraints)]
     requirements = ROOT / backend / "requirements.txt"
     subprocess.run([uv, "pip", "install", "--python", str(python), "-r", str(requirements),
                     *constraints], check=True)
     if not cpu:
-        actual = subprocess.check_output([str(python), "-c", "import sys,torch; print(sys.version.split()[0]); print(torch.__version__)"], text=True).splitlines()
-        if actual != [baseline["python"], baseline["torch"]]:
+        actual = subprocess.check_output([str(python), "-c", "import sys,torch,torchaudio; print(sys.version.split()[0]); print(torch.__version__); print(torchaudio.__version__)"], text=True).splitlines()
+        if actual != [baseline["python"], baseline["torch"], baseline["torchaudio"]]:
             raise RuntimeError(f"설치된 환경이 baseline과 다릅니다: {actual}")
     print("실행 Python:", python)
     return python
