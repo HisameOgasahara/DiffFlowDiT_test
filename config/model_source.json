@@ -1,0 +1,9 @@
+{
+  "repository": "circlestone-labs/Anima",
+  "revision": "f973fc41ec7545364ac9776c2440285f43ff2a30",
+  "folders": {
+    "dit": "split_files/diffusion_models",
+    "text_encoder": "split_files/text_encoders",
+    "vae": "split_files/vae"
+  }
+}

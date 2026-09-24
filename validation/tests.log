@@ -1,0 +1,15 @@
+test_checkpoint_headers_match_diffsynth_registry (test_bundle.BundleTests.test_checkpoint_headers_match_diffsynth_registry) ... ok
+test_notebooks_compile_and_have_no_outputs (test_bundle.BundleTests.test_notebooks_compile_and_have_no_outputs) ... ok
+test_png_matches_saved_generation (test_bundle.BundleTests.test_png_matches_saved_generation) ... ok
+test_runner_does_not_import_web_ui (test_bundle.BundleTests.test_runner_does_not_import_web_ui) ... ok
+test_upstream_files_unchanged (test_bundle.BundleTests.test_upstream_files_unchanged) ... ok
+test_mismatched_experiments_and_shapes_are_visible (test_compare.CompareTests.test_mismatched_experiments_and_shapes_are_visible) ... ok
+test_common_noise_matches_original_comfy_rng (test_schedulers.SchedulerTests.test_common_noise_matches_original_comfy_rng) ... ok
+test_hf_custom_schedule_preserves_pipeline_signature (test_schedulers.SchedulerTests.test_hf_custom_schedule_preserves_pipeline_signature) ... ok
+test_original_schedulers_share_euler_trajectory (test_schedulers.SchedulerTests.test_original_schedulers_share_euler_trajectory) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 13.482s
+
+OK
+�� ����: C:\Users\User\AppData\Local\Temp\tmp7r24hhpe\comparison

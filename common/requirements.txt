@@ -1,0 +1,14 @@
+numpy
+Pillow
+psutil
+transformers
+accelerate
+peft
+huggingface-hub
+safetensors
+sentencepiece
+protobuf
+einops
+scipy
+tqdm
+nbformat

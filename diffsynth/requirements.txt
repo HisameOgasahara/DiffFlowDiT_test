@@ -1,0 +1,7 @@
+-r ../common/requirements.txt
+-c ../config/legacy_transformers.txt
+torchvision
+imageio[ffmpeg]
+modelscope
+ftfy
+pandas

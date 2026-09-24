@@ -1,0 +1,8 @@
+/.venv*/
+__pycache__/
+*.pyc
+/models/
+/runs/
+/.cache/
+/.tools/
+/config/runtime_run.json
