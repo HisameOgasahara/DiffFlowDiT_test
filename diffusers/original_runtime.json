@@ -1,0 +1,11 @@
+{
+  "dtype": "float16",
+  "shift": 3.0,
+  "max_sequence_length": 512,
+  "hf_offload": "auto",
+  "vae_tiling": false,
+  "tokenizers": {
+    "qwen": {"local_path": "comfyui/upstream/comfy/text_encoders/qwen25_tokenizer"},
+    "t5": {"local_path": "comfyui/upstream/comfy/text_encoders/t5_tokenizer"}
+  }
+}

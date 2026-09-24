@@ -1,0 +1,24 @@
+-c constraints.txt
+-c ../config/constraints.txt
+torchvision
+numpy
+Pillow
+psutil
+transformers
+accelerate
+peft
+huggingface-hub
+safetensors
+sentencepiece
+protobuf
+einops
+scipy
+tqdm
+importlib_metadata
+filelock
+httpx
+regex
+requests
+ftfy
+torchsde
+pyyaml
