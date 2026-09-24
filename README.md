@@ -54,7 +54,7 @@ Anima의 ComfyUI 생성 이미지·생성 설정·T4 실행 환경을 baseline�
 | 실행 인자 | `main.py --listen 127.0.0.1 --port 8188 --enable-manager` |
 | 설치 방식 | Colab Python으로 `uv venv --seed --system-site-packages`, ComfyUI requirements 및 manager_requirements 설치 |
 
-세 비교 노트북은 위 Python/PyTorch를 확인하고 Colab 환경을 상속하며, torch·torchvision 버전을 유지합니다.
+세 비교 노트북은 Python 3.13.15 가상환경에 PyTorch 2.14.0+cu130과 호환 torchvision 0.29.0+cu130을 설치합니다.
 
 ## 비교 모드
 

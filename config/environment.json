@@ -6,9 +6,11 @@
   "baseline": {
     "python": "3.13.15",
     "torch": "2.14.0+cu130",
+    "torchvision": "0.29.0+cu130",
+    "torch_backend": "cu130",
     "gpu": "Tesla T4",
     "comfyui": "0.37.0",
     "frontend": "1.53.6"
   },
-  "reason": "GPU 노트북은 baseline의 Colab Python/PyTorch를 상속합니다. 최상위 torch/torchvision 값은 기존 명시적 CPU 점검 경로에만 사용합니다."
+  "reason": "GPU 노트북은 baseline의 Python/PyTorch와 호환 torchvision을 가상환경에 설치합니다. 최상위 torch/torchvision 값은 기존 명시적 CPU 점검 경로에만 사용합니다."
 }

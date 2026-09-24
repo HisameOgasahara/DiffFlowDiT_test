@@ -43,19 +43,13 @@ def setup(backend, cpu=False):
     environment = ROOT / (f".venv-test-{backend}" if cpu else f".venv-{backend}")
     python = environment / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
     profile = json.loads((ROOT / "config/environment.json").read_text(encoding="utf-8"))
-    if not cpu:
-        import importlib.metadata
-        import torch
-        baseline = profile["baseline"]
-        if sys.version.split()[0] != baseline["python"] or torch.__version__ != baseline["torch"]:
-            raise RuntimeError(f"기준 환경은 Python {baseline['python']} / torch {baseline['torch']}입니다. 현재: {sys.version.split()[0]} / {torch.__version__}")
-        inherited = {name: importlib.metadata.version(name) for name in ("torch", "torchvision")}
-        if python.exists():
-            actual = subprocess.check_output([str(python), "-c", "import sys,torch; print(sys.version.split()[0]); print(torch.__version__)"], text=True).splitlines()
-            if actual != [baseline["python"], baseline["torch"]]:
-                raise RuntimeError("기존 가상환경이 기준과 다릅니다. Colab 런타임을 삭제하고 새 런타임에서 실행하세요.")
+    baseline = profile["baseline"]
+    if not cpu and python.exists():
+        actual = subprocess.check_output([str(python), "-c", "import sys; print(sys.version.split()[0])"], text=True).strip()
+        if actual != baseline["python"]:
+            raise RuntimeError("기존 가상환경의 Python이 기준과 다릅니다. 새 Colab 런타임에서 실행하세요.")
     if not python.exists():
-        command = [uv, "venv", "--python", "3.11" if cpu else sys.executable]
+        command = [uv, "venv", "--python", "3.11" if cpu else baseline["python"]]
         if not cpu:
             command += ["--seed", "--system-site-packages"]
         subprocess.run(command + [str(environment)], check=True)
@@ -63,14 +57,22 @@ def setup(backend, cpu=False):
         subprocess.run([uv, "pip", "install", "--python", str(python),
                     f"torch=={profile['torch']}", f"torchvision=={profile['torchvision']}",
                     "--index-url", "https://download.pytorch.org/whl/cpu"], check=True)
+    else:
+        subprocess.run([uv, "pip", "install", "--python", str(python),
+                        f"torch=={baseline['torch']}", f"torchvision=={baseline['torchvision']}",
+                        "--torch-backend", baseline["torch_backend"]], check=True)
     constraints = ["-c", str(ROOT / "config/constraints.txt")]
     if not cpu:
-        inherited_constraints = environment / "baseline_constraints.txt"
-        inherited_constraints.write_text("".join(f"{name}=={version}\n" for name, version in inherited.items()), encoding="utf-8")
-        constraints += ["-c", str(inherited_constraints)]
+        baseline_constraints = environment / "baseline_constraints.txt"
+        baseline_constraints.write_text("".join(f"{name}=={baseline[name]}\n" for name in ("torch", "torchvision")), encoding="utf-8")
+        constraints += ["-c", str(baseline_constraints)]
     requirements = ROOT / backend / "requirements.txt"
     subprocess.run([uv, "pip", "install", "--python", str(python), "-r", str(requirements),
                     *constraints], check=True)
+    if not cpu:
+        actual = subprocess.check_output([str(python), "-c", "import sys,torch; print(sys.version.split()[0]); print(torch.__version__)"], text=True).splitlines()
+        if actual != [baseline["python"], baseline["torch"]]:
+            raise RuntimeError(f"설치된 환경이 baseline과 다릅니다: {actual}")
     print("실행 Python:", python)
     return python
 
