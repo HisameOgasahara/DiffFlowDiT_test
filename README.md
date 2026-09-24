@@ -34,6 +34,28 @@ ComfyUI에서 생성한 PNG를 기준으로 ComfyUI·Diffusers·DiffSynth의 생
 
 PNG에는 원래 실행의 정확한 코드 커밋·가중치 해시·연산 dtype이 없습니다. 이번 복사본은 현재 로컬 reference의 스냅샷이며, 원래 T4 세션과 같다고 가정하지 않습니다. 모델 다운로드 revision은 config/model_source.json에 고정했습니다.
 
+## 재현 기준 환경 · 2026-09-24
+
+[이번 Colab 원본 PNG](config/reference_colab_20260924.png)는 기존 `config/reference.png`와 RGB 픽셀이 완전히 같습니다(최대 차이 0). PNG의 실행 그래프와 프롬프트도 동일합니다.
+
+| 항목 | 확인된 값 |
+|---|---|
+| 원본 노트북 | [anima_comfyui_colab.ipynb](https://github.com/HisameOgasahara/irodori_test/blob/5a2458c5efb6f32ac6ecac3701cead6b57f8374c/anima_comfyui_colab.ipynb) |
+| ComfyUI / frontend | 0.37.0 / 1.53.6 |
+| Templates | 0.11.69 |
+| OS / Python | Linux / 3.13.15 (GCC 13.3.0) |
+| PyTorch / CUDA 빌드 | 2.14.0+cu130 |
+| GPU / VRAM | Tesla T4 / 14.56 GB |
+| allocator | cudaMallocAsync |
+| 실행 인자 | `main.py --listen 127.0.0.1 --port 8188 --enable-manager` |
+| 설치 방식 | Colab Python으로 `uv venv --seed --system-site-packages`, ComfyUI requirements 및 manager_requirements 설치 |
+
+버전·장치·실행 인자는 제공된 ComfyUI 시스템 정보 화면에서 확인했습니다. 실제 실행의 정확한 ComfyUI Git SHA, 전체 패키지 버전, 연산 dtype·attention 커널은 이 화면만으로 확정되지 않습니다. 프로젝트에 복사한 코어 SHA는 `source_manifest.json`에 별도로 기록돼 있습니다.
+
+세 비교 노트북은 위 Python/PyTorch를 확인하고 Colab 기본 환경을 상속합니다. torch·torchvision은 상속한 버전을 설치 제약으로 유지합니다. 이전 Python 3.11 / torch 2.8.0+cu126 환경이 남아 있으면 새 Colab 런타임에서 실행하세요. cu130 요구 경고를 유발했던 cu126 강제 설치를 제거했습니다.
+
+VAE의 `[batch, frame, height, width, channel]` 출력을 ComfyUI `VAEDecode`와 동일하게 `[batch×frame, height, width, channel]`로 정리한 뒤 저장합니다. 첨부 로그의 Pillow 5차원 배열 저장 오류를 수정한 부분입니다. 수정된 비교판의 T4 생성 및 원본 픽셀 일치 여부는 아직 실행 확인 전입니다.
+
 ## 비교 모드
 
 | 모드 | ComfyUI | Diffusers | DiffSynth |
@@ -67,7 +89,7 @@ source_manifest.json   원본 커밋 및 복사한 파일별 SHA256
 
 - ComfyUI 기본은 원래처럼 dtype 자동 선택과 메모리 관리입니다. 명시적 FP16 비교는 runtime의 comfy_dtype를 float16으로 바꿉니다.
 - Diffusers 기본은 ComponentsManager 자동 CPU offload입니다. 연산 정밀도는 ComfyUI 자동 선택과 Qwen FP32 계산을 따릅니다. hf_offload=group으로 leaf 단위 offload를 사용할 수 있습니다.
-- HF 소스의 Hub API 요구 때문에 HF는 Transformers 5.17.0 / Hub 1.32.0, 다른 두 환경은 Transformers 4.57.6 / Hub 0.36.0으로 분리합니다. PyTorch 2.8.0은 공통입니다.
+- HF 소스의 Hub API 요구 때문에 HF는 Transformers 5.17.0 / Hub 1.32.0, 다른 두 환경은 Transformers 4.57.6 / Hub 0.36.0으로 분리합니다. GPU 환경은 Colab의 PyTorch 2.14.0+cu130을 공통으로 상속합니다.
 - DiffSynth는 CPU offload와 GPU 연산 dtype을 분리하고 VRAM 여유를 남깁니다. 디스크 offload는 기본으로 사용하지 않습니다.
 - 새 가상환경에 FlashAttention·SageAttention·양자화 패키지를 추가하지 않습니다. 선택 가능한 attention API·모델 dtype·장치를 기록하지만 실제 CUDA kernel 전체를 profiler로 검증한 것은 아닙니다.
 - Anima 텍스트 어댑터는 세 구현 모두 조건별로 사전 계산하며 호출 횟수를 기록합니다.

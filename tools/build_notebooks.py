@@ -40,8 +40,9 @@ def build(backend, number, title):
     """), cell("markdown", """
     ## 설치
 
-    전용 가상환경을 만들므로 Colab 기본 패키지와 충돌을 줄일 수 있습니다.
-    PyTorch·Transformers는 비교용 버전으로 고정하며, 프레임워크는 동봉한 로컬 소스를 사용합니다.
+    원본처럼 Colab Python 3.13.15 / PyTorch 2.14.0+cu130을 상속하는 가상환경을 만듭니다.
+    기준 환경이 다르면 설치를 중단합니다. 이전 2.8.0 환경은 Colab 런타임을 삭제한 뒤 새 런타임에서 실행하세요.
+    Transformers는 구현별 버전을 사용하며, 프레임워크는 동봉한 로컬 소스를 사용합니다.
     웹 UI·서버·터널은 시작하지 않습니다.
     """), cell("code", f"""
     # 2. 환경 설치

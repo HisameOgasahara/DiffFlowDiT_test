@@ -42,15 +42,35 @@ def setup(backend, cpu=False):
     uv = find_uv()
     environment = ROOT / (f".venv-test-{backend}" if cpu else f".venv-{backend}")
     python = environment / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
-    if not python.exists():
-        subprocess.run([uv, "venv", "--python", "3.11", str(environment)], check=True)
     profile = json.loads((ROOT / "config/environment.json").read_text(encoding="utf-8"))
-    subprocess.run([uv, "pip", "install", "--python", str(python),
+    if not cpu:
+        import importlib.metadata
+        import torch
+        baseline = profile["baseline"]
+        if sys.version.split()[0] != baseline["python"] or torch.__version__ != baseline["torch"]:
+            raise RuntimeError(f"기준 환경은 Python {baseline['python']} / torch {baseline['torch']}입니다. 현재: {sys.version.split()[0]} / {torch.__version__}")
+        inherited = {name: importlib.metadata.version(name) for name in ("torch", "torchvision")}
+        if python.exists():
+            actual = subprocess.check_output([str(python), "-c", "import sys,torch; print(sys.version.split()[0]); print(torch.__version__)"], text=True).splitlines()
+            if actual != [baseline["python"], baseline["torch"]]:
+                raise RuntimeError("기존 가상환경이 기준과 다릅니다. Colab 런타임을 삭제하고 새 런타임에서 실행하세요.")
+    if not python.exists():
+        command = [uv, "venv", "--python", "3.11" if cpu else sys.executable]
+        if not cpu:
+            command += ["--seed", "--system-site-packages"]
+        subprocess.run(command + [str(environment)], check=True)
+    if cpu:
+        subprocess.run([uv, "pip", "install", "--python", str(python),
                     f"torch=={profile['torch']}", f"torchvision=={profile['torchvision']}",
-                    "--index-url", "https://download.pytorch.org/whl/" + ("cpu" if cpu else profile["torch_index"])], check=True)
+                    "--index-url", "https://download.pytorch.org/whl/cpu"], check=True)
+    constraints = ["-c", str(ROOT / "config/constraints.txt")]
+    if not cpu:
+        inherited_constraints = environment / "baseline_constraints.txt"
+        inherited_constraints.write_text("".join(f"{name}=={version}\n" for name, version in inherited.items()), encoding="utf-8")
+        constraints += ["-c", str(inherited_constraints)]
     requirements = ROOT / backend / "requirements.txt"
     subprocess.run([uv, "pip", "install", "--python", str(python), "-r", str(requirements),
-                    "-c", str(ROOT / "config/constraints.txt")], check=True)
+                    *constraints], check=True)
     print("실행 Python:", python)
     return python
 

@@ -3,5 +3,12 @@
   "torch": "2.8.0",
   "torchvision": "0.23.0",
   "torch_index": "cu126",
-  "reason": "T4 비교용 공통 호환성 기준. 최신 버전 자동 갱신 대신 실행 버전을 고정합니다."
+  "baseline": {
+    "python": "3.13.15",
+    "torch": "2.14.0+cu130",
+    "gpu": "Tesla T4",
+    "comfyui": "0.37.0",
+    "frontend": "1.53.6"
+  },
+  "reason": "GPU 노트북은 baseline의 Colab Python/PyTorch를 상속합니다. 최상위 torch/torchvision 값은 기존 명시적 CPU 점검 경로에만 사용합니다."
 }

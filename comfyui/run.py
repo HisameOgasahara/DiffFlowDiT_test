@@ -99,6 +99,9 @@ def run(args, record):
                 pixels = vae.decode_tiled(samples)
             else:
                 pixels = vae.decode(samples)
+            # ComfyUI nodes.VAEDecode: combine batch and frame dimensions.
+            if pixels.ndim == 5:
+                pixels = pixels.reshape(-1, *pixels.shape[-3:])
             record.save("pixels", pixels.movedim(-1, 1))
             save_image(pixels, args.output / "image.png", channel_last=True)
         record.data["ui_started"] = False
