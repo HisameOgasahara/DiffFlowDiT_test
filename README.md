@@ -1,6 +1,6 @@
 # Anima 생성 구현 비교
 
-ComfyUI에서 생성한 PNG를 기준으로 ComfyUI·Diffusers·DiffSynth의 생성 결과와 실행 비용을 비교합니다. ComfyUI는 웹 UI 없이 코어 Python API로 실행합니다.
+Anima의 ComfyUI 생성 이미지·생성 설정·T4 실행 환경을 baseline으로 삼아, ComfyUI·Diffusers·DiffSynth의 추론 구현을 비교합니다. 먼저 UI 없는 ComfyUI 코드로 baseline을 재현하고, 다른 구현의 계산 조건을 맞춘 뒤 구성요소나 최적화를 하나씩 바꾸어 이미지·중간 텐서·시간·메모리 차이를 측정하는 ablation을 목표로 합니다.
 
 ## 시작
 
@@ -16,7 +16,9 @@ ComfyUI에서 생성한 PNG를 기준으로 ComfyUI·Diffusers·DiffSynth의 생
 
 소스는 `/content/DiffFlowDiT_test`, 설정·모델·결과는 `/content/sampling_synchro_data`에 저장됩니다. 런타임 삭제 전에 결과 ZIP을 다운로드하세요. 기존 clone은 자동 갱신되지 않습니다.
 
-## 원본 이미지 기준
+## Baseline 이미지와 생성 설정
+
+[Baseline 이미지](config/reference_colab_20260924.png)는 아래 설정과 실행 환경의 ComfyUI에서 생성한 기준 출력입니다. 각 구현의 재현 결과를 이 이미지와 비교합니다.
 
 | 항목 | 값 |
 |---|---|
@@ -32,13 +34,11 @@ ComfyUI에서 생성한 PNG를 기준으로 ComfyUI·Diffusers·DiffSynth의 생
 
 프롬프트와 생성 설정은 [config/generation.json](config/generation.json), 실행 그래프는 [config/prompt.json](config/prompt.json), UI 배치는 [config/workflow.json](config/workflow.json)에 있습니다. 모델은 [config/model_source.json](config/model_source.json)의 고정 revision에서 내려받습니다.
 
-## 재현 기준 환경 · 2026-09-24
-
-[이번 Colab 원본 PNG](config/reference_colab_20260924.png)는 기존 `config/reference.png`와 RGB 픽셀이 완전히 같습니다(최대 차이 0). PNG의 실행 그래프와 프롬프트도 동일합니다.
+## Baseline 실행 환경
 
 | 항목 | 확인된 값 |
 |---|---|
-| 원본 노트북 | [anima_comfyui_colab.ipynb](https://github.com/HisameOgasahara/irodori_test/blob/5a2458c5efb6f32ac6ecac3701cead6b57f8374c/anima_comfyui_colab.ipynb) |
+| Baseline 생성 노트북 | [anima_comfyui_colab.ipynb](https://github.com/HisameOgasahara/irodori_test/blob/5a2458c5efb6f32ac6ecac3701cead6b57f8374c/anima_comfyui_colab.ipynb) |
 | ComfyUI / frontend | 0.37.0 / 1.53.6 |
 | Templates | 0.11.69 |
 | OS / Python | Linux / 3.13.15 (GCC 13.3.0) |
@@ -48,7 +48,7 @@ ComfyUI에서 생성한 PNG를 기준으로 ComfyUI·Diffusers·DiffSynth의 생
 | 실행 인자 | `main.py --listen 127.0.0.1 --port 8188 --enable-manager` |
 | 설치 방식 | Colab Python으로 `uv venv --seed --system-site-packages`, ComfyUI requirements 및 manager_requirements 설치 |
 
-시스템 정보 화면에서 확인한 값입니다. 원본의 정확한 Git SHA·가중치 해시·연산 dtype·attention 커널은 미확인입니다. 세 비교 노트북은 위 Python/PyTorch를 확인하고 Colab 환경을 상속하며, torch·torchvision 버전을 유지합니다. 환경이 다르면 새 Colab 런타임에서 실행하세요.
+Baseline 생성 세션의 시스템 정보에 기록된 값입니다. 해당 세션의 정확한 Git SHA·가중치 해시·연산 dtype·attention 커널은 미확인입니다. 세 비교 노트북은 위 Python/PyTorch를 확인하고 Colab 환경을 상속하며, torch·torchvision 버전을 유지합니다.
 
 ## 비교 모드
 
@@ -57,7 +57,9 @@ ComfyUI에서 생성한 PNG를 기준으로 ComfyUI·Diffusers·DiffSynth의 생
 | native | PNG의 ER-SDE + simple | 원본 FlowMatch Euler | 원본 FlowMatch Euler |
 | matched_euler | Euler + simple | 공통 simple 배열 + 원본 Euler step | 공통 simple 배열 + 원본 Euler step |
 
-기본은 `matched_euler`입니다. shift=3, 1000점 표의 simple sigma 배열과 CPU FP32 초기 노이즈를 공유합니다. ComfyUI 노트북 마지막에는 같은 프롬프트·seed로 ER-SDE + simple을 실행하는 별도 셀이 있습니다.
+Baseline 재현에는 ComfyUI 노트북 마지막의 ER-SDE + simple 셀을 사용합니다. 기본 실행인 `matched_euler`는 세 구현의 sampler를 Euler로 통일한 비교 조건입니다. shift=3, 1000점 표의 simple sigma 배열과 CPU FP32 초기 노이즈를 공유하며, 이 조건에서는 ComfyUI Euler 출력을 기준으로 다른 두 구현을 비교합니다.
+
+Ablation에서는 기준 실행과 변경 실행 사이에 비교 대상 요소만 바꾸고 나머지 조건을 유지합니다. 구현마다 남아 있는 패키지·정밀도·연산·offload 차이도 함께 기록해야 결과 차이를 해석할 수 있습니다.
 
 ## 코드 위치
 
@@ -77,7 +79,7 @@ Transformers / Hub는 Diffusers 환경에서 5.17.0 / 1.32.0, 나머지에서 4.
 
 실행 폴더에 이미지, 생성·환경·모델 설정, 시간표, 로그, `metrics.json`의 시간·메모리·dtype·실제 sampler가 저장됩니다. `TRACE='selected'`는 조건 텐서와 첫·둘째·마지막 스텝을 기록합니다. 성능 비교에는 저장·CPU 복사 비용을 제외하는 `TRACE='none'`을 사용하세요.
 
-현재 수정본의 T4 생성과 원본 픽셀 일치는 재실행 확인 전입니다.
+UI 없는 ComfyUI 실행의 baseline 픽셀 일치와 세 구현 사이의 수치 일치는 아직 검증되지 않았습니다.
 
 ## 원본 라이선스
 
