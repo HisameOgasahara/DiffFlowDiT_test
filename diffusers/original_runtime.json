@@ -13,5 +13,5 @@
     }
   },
   "residual_fp32": true,
-  "nan_debug": true
+  "nan_debug": false
 }
