@@ -23,12 +23,11 @@
 
 Euler 수식 자체는 새로 작성하지 않습니다. CPU 테스트는 세 원본 Euler 구현을 같은 시간표와 상수 벡터장에 연결해 알려진 해와 비교합니다. 이 테스트는 실모델의 이미지 일치나 T4 성능을 입증하지 않습니다.
 
-## 아직 통일하지 않은 부분
+## ComfyUI 기준으로 적용하는 처리
 
-- ComfyUI의 프롬프트 괄호 가중치·토큰 후처리와 HF/DiffSynth의 일반 문자열 토큰화
-- Qwen hidden state·padding·mask·텍스트 어댑터 호출 위치
-- 각 모델의 입력·중간 연산 정밀도와 attention kernel
-- VAE 내부 정규화와 디코딩 수치 오차
-- HF/DiffSynth의 ER-SDE 경로: 이 묶음에서는 원본 Flow Euler만 실행
-
-원본 프롬프트에는 `(blue archive)`가 있어 ComfyUI의 괄호 해석도 실제 비교 대상입니다. 문자열을 고치거나 전처리를 강제로 통일하지 않았습니다. 계산이 처음 달라지는 위치를 찾은 후 한 항목씩 수정할 수 있습니다.
+- common/comfy_alignment.py: 원본 AnimaTokenizer, Qwen의 FP32 embedding·최종 norm·causal/padding mask·attention 연산, T5 토큰 가중치와 512 길이 zero padding을 연결합니다.
+- diffusers/align_comfy.py: 원래 HF 모델의 모듈·가중치를 사용하면서 DiT residual을 FP32로 유지하고 ComfyUI의 RMSNorm·RoPE·attention·addcmul 순서를 적용합니다.
+- diffsynth/align_comfy.py: Qwen 인코딩 후 텍스트 어댑터를 positive/negative별 한 번 계산합니다. DiT는 이 조건을 각 스텝에서 재사용합니다.
+- 구성요소별 정밀도는 실행 장치에서 ComfyUI 자동 선택 함수로 정합니다. Qwen 연산은 SDClipModel과 같은 FP32를 사용합니다.
+- VAE는 FP32 latent 역정규화 후 선택된 VAE dtype으로 변환하며, RMS 정규화·attention·단일 프레임 causal convolution·최종 픽셀 변환을 맞춥니다.
+- 원본 upstream 파일은 유지하며 외부 연결 파일에서 실행 함수를 적용합니다. ER-SDE는 ComfyUI 노트북의 별도 셀에서 실행합니다.

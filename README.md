@@ -43,7 +43,7 @@ PNG에는 원래 실행의 정확한 코드 커밋·가중치 해시·연산 dty
 
 native는 프롬프트·seed·해상도·steps·CFG를 공유하면서 원본 구현 차이를 드러냅니다. HF/DiffSynth에서 ER-SDE를 몰래 Euler로 바꾼 뒤 같은 설정이라고 취급하지 않습니다. 실제 sampler는 metrics.json에 기록합니다.
 
-matched_euler는 ComfyUI 모델의 shift=3, 1000점 표에서 선택한 simple sigma 배열, CPU FP32 초기 노이즈, Euler를 공유합니다. HF/DiffSynth에서는 solver 상태를 FP32로 유지하고 모델 계산은 runtime dtype을 사용합니다. 토큰 처리, 텍스트 조건, 모델 내부, VAE는 원본대로 남깁니다. 이 모드는 원본 PNG의 ER-SDE 재현이 아니며 결과 일치를 보장하지 않습니다. ER-SDE 왕복 이식은 다음 비교 단계입니다.
+기본 실행은 matched_euler입니다. ComfyUI 모델의 shift=3, 1000점 표에서 선택한 simple sigma 배열, CPU FP32 초기 노이즈, Euler를 공유합니다. 프롬프트·Qwen·텍스트 어댑터·연산 정밀도·VAE 처리는 각 align_comfy.py에서 ComfyUI 기준으로 연결합니다. ComfyUI 노트북 마지막의 별도 셀은 같은 프롬프트·seed로 ER-SDE + simple 이미지를 저장합니다.
 
 ## 코드 위치
 
@@ -61,16 +61,16 @@ diffsynth/upstream/     원본 diffsynth 패키지
 source_manifest.json   원본 커밋 및 복사한 파일별 SHA256
 ```
 
-동적 모델 등록과 공통 로더 의존성을 보존하기 위해 각 패키지의 다른 모델 파일도 일부 포함합니다. ComfyUI의 main.py, server.py, nodes.py, 프런트엔드, 확장 노드 로딩은 실행 경로에 포함하지 않습니다. 원본 코어 파일은 바이트 단위로 보존하며, 비교용 변경은 run.py의 외부 래퍼에 있습니다. main.py의 allocator·DynamicVRAM 초기화만 headless_init.py에 옮겼습니다. CUDA allocator 원본 파일도 보존했습니다.
+동적 모델 등록과 공통 로더 의존성을 보존하기 위해 각 패키지의 다른 모델 파일도 일부 포함합니다. ComfyUI의 main.py, server.py, nodes.py, 프런트엔드, 확장 노드 로딩은 실행 경로에 포함하지 않습니다. 원본 코어 파일은 바이트 단위로 보존하며, 비교용 변경은 run.py와 align_comfy.py의 외부 연결에 있습니다. main.py의 allocator·DynamicVRAM 초기화만 headless_init.py에 옮겼습니다. CUDA allocator 원본 파일도 보존했습니다.
 
 ## T4 메모리와 최적화
 
 - ComfyUI 기본은 원래처럼 dtype 자동 선택과 메모리 관리입니다. 명시적 FP16 비교는 runtime의 comfy_dtype를 float16으로 바꿉니다.
-- Diffusers 기본은 ComponentsManager 자동 CPU offload와 FP16입니다. 부족하면 hf_offload=group으로 leaf 단위 offload를 사용합니다.
+- Diffusers 기본은 ComponentsManager 자동 CPU offload입니다. 연산 정밀도는 ComfyUI 자동 선택과 Qwen FP32 계산을 따릅니다. hf_offload=group으로 leaf 단위 offload를 사용할 수 있습니다.
 - HF 소스의 Hub API 요구 때문에 HF는 Transformers 5.17.0 / Hub 1.32.0, 다른 두 환경은 Transformers 4.57.6 / Hub 0.36.0으로 분리합니다. PyTorch 2.8.0은 공통입니다.
 - DiffSynth는 CPU offload와 GPU 연산 dtype을 분리하고 VRAM 여유를 남깁니다. 디스크 offload는 기본으로 사용하지 않습니다.
 - 새 가상환경에 FlashAttention·SageAttention·양자화 패키지를 추가하지 않습니다. 선택 가능한 attention API·모델 dtype·장치를 기록하지만 실제 CUDA kernel 전체를 profiler로 검증한 것은 아닙니다.
-- Anima 텍스트 어댑터 호출 횟수를 기록합니다. ComfyUI/HF의 사전 계산과 DiffSynth의 반복 계산 차이를 확인할 수 있습니다.
+- Anima 텍스트 어댑터는 세 구현 모두 조건별로 사전 계산하며 호출 횟수를 기록합니다.
 - 자동으로 해상도·steps·가중치 정밀도를 낮추지 않습니다. OOM·NaN은 실패 또는 비교 결과로 남깁니다.
 - FP16의 수치 안정성과 T4 실측은 Colab 실행으로 확인해야 합니다. CPU 테스트는 이를 대신하지 않습니다.
 

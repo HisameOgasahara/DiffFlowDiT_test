@@ -58,7 +58,7 @@ def build(backend, number, title):
     **원본 비교(`native`)**: ComfyUI는 ER-SDE+simple, Diffusers·DiffSynth는 원본 Flow Euler를 사용합니다. 이 차이는 결과에 명시됩니다.
 
     **계산 조건 통일(`matched_euler`)**: 세 구현 모두 ComfyUI simple 시간표·동일 FP32 노이즈·Euler를 사용합니다.
-    텍스트 처리와 모델 내부는 원본대로 유지하므로 이미지가 같아졌다고 가정하지 않습니다. 이 모드는 원본 PNG의 ER-SDE 재현이 아닙니다.
+    프롬프트 가중치·Qwen·텍스트 어댑터·연산 정밀도·VAE는 ComfyUI 기준으로 처리합니다.
     """), cell("code", """
     # 3. 공통 HP 확인·수정
     CONFIG = DATA / 'generation.json'
@@ -71,10 +71,10 @@ def build(backend, number, title):
     CONFIG.write_text(json.dumps(hp, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(hp, ensure_ascii=False, indent=2))
 
-    MODE = 'native'  # 'native' 또는 'matched_euler'
+    MODE = 'matched_euler'  # 공통 Euler 비교. ComfyUI ER-SDE는 별도 셀에서 실행
     TRACE = 'selected'  # 첫·둘째·마지막 스텝 저장. 속도 측정만 할 때 'none'
     runtime = json.loads((PROJECT / 'config/runtime.json').read_text(encoding='utf-8'))
-    # comfy_dtype='auto': ComfyUI 자동 선택 / 'float16': FP16 명시
+    # ComfyUI의 T4 자동 선택을 기준으로 구성요소별 연산 정밀도를 적용
     # hf_offload='auto': 모델 관리 / 'group': 더 세밀한 offload
     # comfy_memory='low': ComfyUI lowvram / 기본 'normal'
     RUNTIME = PROJECT / 'config/runtime_run.json'
@@ -85,7 +85,7 @@ def build(backend, number, title):
 
     세 구현에 같은 safetensors 파일을 제공합니다. 최초 다운로드 revision과 SHA256을 고정합니다.
     원본 PNG에는 가중치 해시가 없으므로, 파일명이 같은 것 이상으로 원본 생성 당시 파일과 동일하다고 보장하지 않습니다.
-    텍스트 tokenizer 파일은 동봉한 ComfyUI 파일을 공유하되, 각 구현의 토큰 처리 방식은 유지합니다.
+    텍스트 tokenizer 파일과 괄호 가중치·토큰 처리 규칙은 동봉한 ComfyUI를 기준으로 공유합니다.
 
     모델과 결과는 런타임의 `/content/sampling_synchro_data`에 저장합니다. 런타임 삭제 전에 필요한 결과를 다운로드하세요.
     """), cell("code", """
@@ -176,6 +176,39 @@ def build(backend, number, title):
     else:
         print('다른 노트북도 실행한 뒤 SELECTED에 비교할 폴더 이름을 넣으세요.')
     """)]
+    if backend == "comfyui":
+        cells.extend([cell("markdown", """
+        ## ComfyUI ER-SDE 생성
+
+        같은 프롬프트·seed·해상도로 ER-SDE + simple 이미지를 별도 폴더에 저장합니다.
+        """), cell("code", """
+        ER_CONFIG = DATA / 'generation_er_sde.json'
+        er_hp = json.loads(CONFIG.read_text(encoding='utf-8'))
+        er_hp.update(sampler_name='er_sde', scheduler='simple')
+        ER_CONFIG.write_text(json.dumps(er_hp, ensure_ascii=False, indent=2), encoding='utf-8')
+        ER_OUTPUT = DATA / 'runs' / f"comfyui_er_sde_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}"
+        ER_LOG = ER_OUTPUT.parent / f'{ER_OUTPUT.name}.log'
+        er_command = [str(PYTHON), '-u', str(PROJECT / 'comfyui/run.py'), '--config', str(ER_CONFIG),
+                      '--runtime', str(RUNTIME), '--models', str(MODELS), '--output', str(ER_OUTPUT),
+                      '--mode', 'native', '--trace', TRACE]
+        try:
+            with ER_LOG.open('w', encoding='utf-8') as stream:
+                process = subprocess.Popen(er_command, cwd=PROJECT, stdout=subprocess.PIPE,
+                                           stderr=subprocess.STDOUT, text=True)
+                for line in process.stdout:
+                    print(line, end='')
+                    stream.write(line)
+                code = process.wait()
+            if code:
+                raise RuntimeError(f'ER-SDE 실행 실패({code}): {ER_LOG}')
+        finally:
+            ER_OUTPUT.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ER_LOG, ER_OUTPUT / 'run.log')
+            with (ER_OUTPUT / 'project_commit.txt').open('w') as stream:
+                subprocess.run(['git', '-C', str(PROJECT), 'rev-parse', 'HEAD'], stdout=stream, check=True)
+        display(Image(filename=str(ER_OUTPUT / 'image.png')))
+        print('ER-SDE 결과:', ER_OUTPUT)
+        """)])
     notebook = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                  "language_info": {"name": "python"}, "accelerator": "GPU", "colab": {"name": f"{number}_{backend}.ipynb", "gpuType": "T4"}},
                 "nbformat": 4, "nbformat_minor": 5}

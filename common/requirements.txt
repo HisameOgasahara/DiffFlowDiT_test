@@ -12,3 +12,6 @@ einops
 scipy
 tqdm
 nbformat
+comfy-kitchen==0.2.35
+comfy-aimdo==0.5.5
+pyyaml

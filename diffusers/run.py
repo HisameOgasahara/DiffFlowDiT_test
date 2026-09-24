@@ -7,9 +7,9 @@ from common.runtime import ROOT, add_source, parse_run, Recorder, make_noise, ma
 
 def ensure_converted(args):
     manifest = read_json(args.models / "model_manifest.json")
-    dtype = args.options["dtype"]
     commit = read_json(ROOT / "source_manifest.json")["diffusers"]["commit"]
     for component in ("transformer", "text_conditioner", "text_encoder", "vae"):
+        dtype = str(args.precision[component]).removeprefix("torch.")
         marker = args.models / "diffusers_converted" / dtype / component / "conversion_source.json"
         expected = {"weights": manifest["weights"], "dtype": dtype, "source_commit": commit}
         if marker.exists() and read_json(marker) == expected:
@@ -21,24 +21,28 @@ def run(args, record):
     import torch
     from diffusers import AnimaAutoBlocks, AnimaTextConditioner, AutoencoderKLQwenImage, CosmosTransformer3DModel, FlowMatchEulerDiscreteScheduler, ComponentsManager, ClassifierFreeGuidance
     from transformers import Qwen3Model, Qwen2Tokenizer, T5TokenizerFast
+    from align_comfy import install_pipeline, install_components
+    install_pipeline(record)
     hp, options = args.hp, args.options
-    dtype = getattr(torch, options["dtype"])
-    base = args.models / "diffusers_converted" / options["dtype"]
+    precision = args.precision
+    def component_path(name):
+        return args.models / "diffusers_converted" / str(precision[name]).removeprefix("torch.") / name
     with record.stage("load_models"):
         manager = ComponentsManager()
         if options["hf_offload"] == "auto":
             manager.enable_auto_cpu_offload(device="cuda:0")
         pipe = AnimaAutoBlocks().init_pipeline(components_manager=manager)
         components = {
-            "transformer": CosmosTransformer3DModel.from_pretrained(base / "transformer", torch_dtype=dtype),
-            "text_conditioner": AnimaTextConditioner.from_pretrained(base / "text_conditioner", torch_dtype=dtype),
-            "text_encoder": Qwen3Model.from_pretrained(base / "text_encoder", torch_dtype=dtype),
-            "vae": AutoencoderKLQwenImage.from_pretrained(base / "vae", torch_dtype=dtype),
+            "transformer": CosmosTransformer3DModel.from_pretrained(component_path("transformer"), torch_dtype=precision["transformer"]),
+            "text_conditioner": AnimaTextConditioner.from_pretrained(component_path("text_conditioner"), torch_dtype=precision["text_conditioner"]),
+            "text_encoder": Qwen3Model.from_pretrained(component_path("text_encoder"), torch_dtype=precision["text_encoder"]),
+            "vae": AutoencoderKLQwenImage.from_pretrained(component_path("vae"), torch_dtype=precision["vae"]),
             "tokenizer": Qwen2Tokenizer.from_pretrained(args.models / "tokenizers/qwen25_tokenizer"),
             "t5_tokenizer": T5TokenizerFast.from_pretrained(args.models / "tokenizers/t5_tokenizer"),
             "scheduler": FlowMatchEulerDiscreteScheduler(shift=options["shift"]),
             "guider": ClassifierFreeGuidance(guidance_scale=hp["cfg"]),
         }
+        install_components(components)
         pipe.update_components(**components)
         if options["hf_offload"] == "group":
             from diffusers.hooks import apply_group_offloading
@@ -96,16 +100,20 @@ def run(args, record):
         result = pipe(**call)
     for label, key in (("prompt", "qwen_prompt_embeds"), ("negative_prompt", "negative_qwen_prompt_embeds")):
         record.save(f"condition_{label}", result[key])
-    record.save("condition_prompt_t5xxl_ids", result["t5_input_ids"])
-    record.save("condition_negative_prompt_t5xxl_ids", result["negative_t5_input_ids"])
+    record.save("condition_prompt_t5xxl_ids", result["t5_input_ids"].squeeze(0))
+    if result["negative_t5_input_ids"] is not None:
+        record.save("condition_negative_prompt_t5xxl_ids", result["negative_t5_input_ids"].squeeze(0))
     result["images"][0].save(args.output / "image.png")
 
 if __name__ == "__main__":
     args = parse_run("diffusers")
     add_source("diffusers")
+    from common.comfy_alignment import load_comfy_policy
+    args.precision = load_comfy_policy(args.weights)
     # 모델 형식 변환은 추론 성능 측정에 포함하지 않습니다.
     ensure_converted(args)
     record = Recorder(args)
+    record.data["precision_policy"] = {key: str(value) for key, value in args.precision.items()}
     try:
         run(args, record)
     except BaseException as error:

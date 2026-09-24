@@ -1,11 +1,11 @@
 {
-  "dtype": "float16",
+  "dtype": "auto",
   "comfy_dtype": "auto",
   "comfy_memory": "normal",
   "hf_offload": "auto",
   "diffsynth_vram_margin_gib": 1.5,
   "shift": 3.0,
   "training_steps": 1000,
-  "max_sequence_length": 512,
+  "max_sequence_length": null,
   "vae_tiling": false
 }

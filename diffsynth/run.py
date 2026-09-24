@@ -6,20 +6,27 @@ from common.runtime import add_source, parse_run, Recorder, make_noise, make_com
 def run(args, record):
     import torch
     from diffsynth.pipelines.anima_image import AnimaImagePipeline, ModelConfig
+    from common.comfy_alignment import load_comfy_policy
+    from align_comfy import install_models, install_pipeline
     hp, options = args.hp, args.options
-    if options["max_sequence_length"] != 512:
-        raise ValueError("원본 DiffSynth Anima prompt unit의 길이는 512입니다. 길이 변경 실험은 prompt unit에서 명시적으로 수정하세요.")
-    dtype = getattr(torch, options["dtype"])
-    vram = dict(offload_dtype=dtype, offload_device="cpu", onload_dtype=dtype, onload_device="cpu",
-                preparing_dtype=dtype, preparing_device="cuda", computation_dtype=dtype, computation_device="cuda")
+    policy = load_comfy_policy(args.weights)
+    install_models()
+    dtype = policy["transformer"]
+    vram = {}
+    for name in args.weights:
+        component_dtype = policy["transformer" if name == "dit" else name]
+        vram[name] = dict(offload_dtype=component_dtype, offload_device="cpu", onload_dtype=component_dtype, onload_device="cpu",
+                          preparing_dtype=component_dtype, preparing_device="cuda", computation_dtype=component_dtype, computation_device="cuda")
+    record.data["precision_policy"] = {key: str(value) for key, value in policy.items()}
     with record.stage("load_models"):
         pipe = AnimaImagePipeline.from_pretrained(
             torch_dtype=dtype, device="cuda",
-            model_configs=[ModelConfig(path=str(path), **vram) for path in args.weights.values()],
+            model_configs=[ModelConfig(path=str(path), **vram[name]) for name, path in args.weights.items()],
             tokenizer_config=ModelConfig(path=str(args.models / "tokenizers/qwen25_tokenizer")),
             tokenizer_t5xxl_config=ModelConfig(path=str(args.models / "tokenizers/t5_tokenizer")),
             vram_limit=max(0.5, torch.cuda.mem_get_info()[0] / 2**30 - options["diffsynth_vram_margin_gib"]),
         )
+        install_pipeline(pipe, record, policy)
         for name in ("dit", "text_encoder", "vae"):
             if getattr(pipe, name) is None:
                 raise ValueError(f"원본 DiffSynth 로더가 {name}을 인식하지 못했습니다. 모델 형식과 registry를 확인하세요.")
@@ -72,9 +79,9 @@ def run(args, record):
         with record.stage(type(unit).__name__):
             shared, positive, negative = original_unit(unit, pipeline, shared, positive, negative)
         for label, values in (("prompt", positive), ("negative_prompt", negative)):
-            if "prompt_emb" in values:
+            if type(unit).__name__ == "AnimaUnit_PromptEmbedder" and "prompt_emb" in values:
                 record.save(f"condition_{label}", values["prompt_emb"])
-                record.save(f"condition_{label}_t5xxl_ids", values.get("t5xxl_ids"))
+                record.save(f"condition_{label}_t5xxl_ids", values["t5xxl_ids"].squeeze(0))
         return shared, positive, negative
     pipe.unit_runner = unit_runner
     # 원본 호출을 보존하고 단계별 시간만 측정합니다.
