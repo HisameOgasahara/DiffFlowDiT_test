@@ -1,0 +1,10 @@
+{
+  "dtype": "float16",
+  "vram_margin_gib": 1.5,
+  "sigma_shift": 3.0,
+  "rand_device": "cpu",
+  "tokenizers": {
+    "qwen": {"repository": "Qwen/Qwen3-0.6B", "revision": "main", "subfolder": ""},
+    "t5": {"repository": "stabilityai/stable-diffusion-3.5-large", "revision": "main", "subfolder": "tokenizer_3"}
+  }
+}

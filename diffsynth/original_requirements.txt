@@ -1,0 +1,19 @@
+-c ../config/legacy_transformers.txt
+-c ../config/constraints.txt
+torchvision
+transformers
+imageio[ffmpeg]
+safetensors
+einops
+modelscope
+ftfy
+pandas
+accelerate
+peft
+huggingface-hub
+sentencepiece
+protobuf
+Pillow
+psutil
+scipy
+tqdm
