@@ -5,6 +5,6 @@
   "rand_device": "cpu",
   "tokenizers": {
     "qwen": {"repository": "Qwen/Qwen3-0.6B", "revision": "main", "subfolder": ""},
-    "t5": {"repository": "stabilityai/stable-diffusion-3.5-large", "revision": "main", "subfolder": "tokenizer_3"}
+    "t5": {"local_path": "comfyui/upstream/comfy/text_encoders/t5_tokenizer"}
   }
 }
