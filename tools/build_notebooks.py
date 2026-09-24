@@ -61,7 +61,13 @@ def build(backend, number, title):
         details = INSTALL_LOG.read_text(encoding='utf-8')[-12000:]
         raise RuntimeError(f'환경 설치 실패({{returncode}}): {{INSTALL_LOG}}\\n{{details}}')
     PYTHON = PROJECT / f'.venv-{{BACKEND}}/bin/python'
-    subprocess.run([str(PYTHON), '-c', 'import torch; print(torch.__version__); print(torch.cuda.get_device_name()); assert torch.cuda.is_available()'], check=True)
+    environment_check = subprocess.run(
+        [str(PYTHON), '-c', 'import sys, torch, torchvision; print("Python:", sys.version.split()[0]); print("PyTorch:", torch.__version__); print("CUDA build:", torch.version.cuda); print("torchvision:", torchvision.__version__); assert torch.cuda.is_available(); print("GPU:", torch.cuda.get_device_name())'],
+        capture_output=True, text=True,
+    )
+    print(environment_check.stdout, end='')
+    if environment_check.returncode:
+        raise RuntimeError(environment_check.stderr)
     """), cell("markdown", """
     ## 공통 생성 설정
 
@@ -222,6 +228,25 @@ def build(backend, number, title):
         display(Image(filename=str(ER_OUTPUT / 'image.png')))
         print('ER-SDE 결과:', ER_OUTPUT)
         """)])
+    cells.extend([cell("markdown", """
+    ## 결과 폴더를 Google Drive에 복사 (선택)
+
+    생성이 끝난 뒤 실행하세요. `runs` 전체(이미지·설정·중간 텐서·실행 로그)와 설치 로그를
+    `MyDrive/Anima_results` 아래 새 폴더에 복사합니다. ComfyUI의 Euler·ER-SDE 결과도 함께 포함됩니다.
+    """), cell("code", """
+    from google.colab import drive
+    from pathlib import Path
+    from datetime import datetime, timezone
+    import shutil
+
+    drive.mount('/content/drive')
+    source = Path('/content/sampling_synchro_data')
+    destination = Path('/content/drive/MyDrive/Anima_results') / datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_%f')
+    shutil.copytree(source / 'runs', destination)
+    for install_log in source.glob('install_*.log'):
+        shutil.copy2(install_log, destination / install_log.name)
+    print('복사 완료:', destination)
+    """)])
     notebook = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                  "language_info": {"name": "python"}, "accelerator": "GPU", "colab": {"name": f"{number}_{backend}.ipynb", "gpuType": "T4"}},
                 "nbformat": 4, "nbformat_minor": 5}
